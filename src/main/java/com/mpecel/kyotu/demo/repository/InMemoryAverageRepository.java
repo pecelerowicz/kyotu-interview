@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -56,7 +57,11 @@ public class InMemoryAverageRepository {
     }
 
     public synchronized List<AverageTempByYear> averageTempByYearsForCity(String city) {
-        return map.get(city).entrySet()
+        Map<Integer, AverageSampleSizePair> cityMap = map.get(city);
+        if(cityMap == null) {
+            return new LinkedList<>();
+        }
+        return cityMap.entrySet()
                 .stream()
                 .map(e -> AverageTempByYear.builder()
                                            .year(e.getKey()+"")
