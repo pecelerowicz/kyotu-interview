@@ -1,2 +1,1 @@
-elasticsearch:
-  file-name: example_file.csv
+file-name: example_file.csv

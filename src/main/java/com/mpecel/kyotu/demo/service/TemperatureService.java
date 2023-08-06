@@ -5,6 +5,7 @@ import com.mpecel.kyotu.demo.repository.InMemoryAverageRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.io.IOException;
 import java.util.List;
 
 @Service
@@ -14,6 +15,10 @@ public class TemperatureService {
 
     public List<AverageTempByYear> averageTempByYears(String city) {
         return inMemoryAverageRepository.averageTempByYearsForCity(city);
+    }
+
+    public void triggerIndexing() throws IOException {
+        inMemoryAverageRepository.indexInMemory();
     }
 
 }

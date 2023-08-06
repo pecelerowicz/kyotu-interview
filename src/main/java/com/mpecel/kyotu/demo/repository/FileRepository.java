@@ -16,16 +16,8 @@ import java.util.stream.Stream;
 
 @Repository
 public class FileRepository {
-    @Value("${elasticsearch.file-name}")
+    @Value("${file-name}")
     private String fileName;
-
-    public List<DataRow> readDataRows(int numberOfLines) throws IOException {
-        try (Stream<String> lines = Files.lines(Path.of(fileName))) {
-            return lines.limit(numberOfLines)
-                    .map(this::convertLineToDataRow)
-                    .collect(Collectors.toList());
-        }
-    }
 
     public Stream<DataRow> readDataRowsAsStream() throws IOException {
         Path path = Paths.get(fileName);

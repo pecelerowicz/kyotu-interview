@@ -2,6 +2,7 @@ package com.mpecel.kyotu.demo.repository;
 
 import com.mpecel.kyotu.demo.dto.AverageTempByYear;
 import lombok.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -17,7 +18,8 @@ public class InMemoryAverageRepository {
 
     private final Map<String, Map<Integer, AverageSampleSizePair>> map = new HashMap<>(); // city, year, currentAverage, sampleSize
 
-    public void indexInMemory() throws IOException {
+    @Async
+    public synchronized void indexInMemory() throws IOException {
         System.out.println("Indexing started");
         fileRepository.readDataRowsAsStream().forEach(r -> {
             if(!map.containsKey(r.getCity())) {
@@ -46,7 +48,7 @@ public class InMemoryAverageRepository {
         System.out.println(map);
     }
 
-    public List<AverageTempByYear> averageTempByYearsForCity(String city) {
+    public synchronized List<AverageTempByYear> averageTempByYearsForCity(String city) {
         return map.get(city).entrySet()
                 .stream()
                 .map(e -> AverageTempByYear.builder()
