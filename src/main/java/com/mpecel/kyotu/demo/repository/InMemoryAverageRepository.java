@@ -2,6 +2,7 @@ package com.mpecel.kyotu.demo.repository;
 
 import com.mpecel.kyotu.demo.dto.AverageTempByYear;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class InMemoryAverageRepository {
     private final FileRepository fileRepository;
 
@@ -20,11 +22,14 @@ public class InMemoryAverageRepository {
 
     @Async
     public synchronized void indexInMemory() throws IOException {
-        System.out.println("Indexing started");
+        log.info("Indexing started");
         fileRepository.readDataRowsAsStream().forEach(r -> {
             if(!map.containsKey(r.getCity())) {
                 AverageSampleSizePair averageSize =
-                        AverageSampleSizePair.builder().average(r.getTemperature()).size(1).build();
+                        AverageSampleSizePair.builder()
+                                .average(r.getTemperature())
+                                .size(1)
+                                .build();
                 Map<Integer, AverageSampleSizePair> yearAverage = new HashMap<>();
                 yearAverage.put(r.getDateTime().getYear(), averageSize);
                 map.put(r.getCity(), yearAverage);
@@ -32,18 +37,20 @@ public class InMemoryAverageRepository {
                 Map<Integer, AverageSampleSizePair> yearAverage = map.get(r.getCity());
                 if(!yearAverage.containsKey(r.getDateTime().getYear())) {
                     AverageSampleSizePair averageSize =
-                            AverageSampleSizePair.builder().average(r.getTemperature()).size(1).build();
+                            AverageSampleSizePair.builder()
+                                    .average(r.getTemperature())
+                                    .size(1)
+                                    .build();
                     yearAverage.put(r.getDateTime().getYear(), averageSize);
                 } else {
                     AverageSampleSizePair averageSize = yearAverage.get(r.getDateTime().getYear());
-                    double updatedAverage =
-                            (averageSize.getAverage() * averageSize.getSize() + r.getTemperature()) / (averageSize.getSize() + 1);
-                    averageSize.setAverage(updatedAverage);
+                    averageSize.setAverage(updateAverage(averageSize.getAverage(),
+                            averageSize.getSize(), r.getTemperature()));
                     averageSize.setSize(averageSize.getSize() + 1);
                 }
             }
         });
-        System.out.println("Indexing finished");
+        log.info("Indexing finished");
 
         System.out.println(map);
     }
@@ -53,10 +60,19 @@ public class InMemoryAverageRepository {
                 .stream()
                 .map(e -> AverageTempByYear.builder()
                                            .year(e.getKey()+"")
-                                           .averageTemperature(e.getValue().getAverage())
-                                            .build())
+                                           .averageTemperature(roundToOneDecimal(e.getValue().getAverage()))
+                                           .build())
                 .collect(Collectors.toList());
     }
+
+    private double updateAverage(double currentAverage, int sampleSize, double newValue) {
+        return (currentAverage * sampleSize + newValue)/(sampleSize + 1);
+    }
+
+    private double roundToOneDecimal(double value) {
+        return Math.round(value * 10.0) / 10.0;
+    }
+
 
 }
 
