@@ -15,7 +15,7 @@ import static org.springframework.http.ResponseEntity.ok;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/temperature")
-public class DataRowController {
+public class TemperatureController {
     private final TemperatureService temperatureService;
 
     @GetMapping("/mean/{city}")

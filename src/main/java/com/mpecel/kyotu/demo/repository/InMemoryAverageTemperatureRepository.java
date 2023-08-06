@@ -1,6 +1,7 @@
 package com.mpecel.kyotu.demo.repository;
 
 import com.mpecel.kyotu.demo.dto.AverageTempByYear;
+import com.mpecel.kyotu.demo.dto.DataRow;
 import lombok.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -16,7 +17,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class InMemoryAverageRepository {
+public class InMemoryAverageTemperatureRepository {
     private final FileRepository fileRepository;
 
     private final Map<String, Map<Integer, AverageSampleSizePair>> map = new HashMap<>(); // city, year, currentAverage, sampleSize
@@ -26,22 +27,14 @@ public class InMemoryAverageRepository {
         log.info("Indexing started");
         fileRepository.readDataRowsAsStream().forEach(r -> {
             if(!map.containsKey(r.getCity())) {
-                AverageSampleSizePair averageSize =
-                        AverageSampleSizePair.builder()
-                                .average(r.getTemperature())
-                                .size(1)
-                                .build();
+                AverageSampleSizePair averageSize = createFreshAverageSampleSizePair(r);
                 Map<Integer, AverageSampleSizePair> yearAverage = new HashMap<>();
                 yearAverage.put(r.getDateTime().getYear(), averageSize);
                 map.put(r.getCity(), yearAverage);
             } else {
                 Map<Integer, AverageSampleSizePair> yearAverage = map.get(r.getCity());
                 if(!yearAverage.containsKey(r.getDateTime().getYear())) {
-                    AverageSampleSizePair averageSize =
-                            AverageSampleSizePair.builder()
-                                    .average(r.getTemperature())
-                                    .size(1)
-                                    .build();
+                    AverageSampleSizePair averageSize = createFreshAverageSampleSizePair(r);
                     yearAverage.put(r.getDateTime().getYear(), averageSize);
                 } else {
                     AverageSampleSizePair averageSize = yearAverage.get(r.getDateTime().getYear());
@@ -54,6 +47,13 @@ public class InMemoryAverageRepository {
         log.info("Indexing finished");
 
         System.out.println(map);
+    }
+
+    private static AverageSampleSizePair createFreshAverageSampleSizePair(DataRow r) {
+        return AverageSampleSizePair.builder()
+                .average(r.getTemperature())
+                .size(1)
+                .build();
     }
 
     public synchronized List<AverageTempByYear> averageTempByYearsForCity(String city) {
