@@ -18,14 +18,14 @@ import static org.springframework.http.ResponseEntity.ok;
 public class TemperatureController {
     private final TemperatureService temperatureService;
 
-    @GetMapping("/mean/{city}")
+    @GetMapping("/{city}")
     public ResponseEntity<List<AverageTempByYear>> getAverageTempByYear(@PathVariable("city") String city) {
         return ResponseEntity.ok(temperatureService.averageTempByYears(city));
     }
 
-    @GetMapping("/indexing")
-    public ResponseEntity<Void> triggerIndexing() throws IOException {
+    @PostMapping("/indexing")
+    public ResponseEntity<String> triggerIndexing() throws IOException {
         temperatureService.triggerIndexing();
-        return new ResponseEntity<>(HttpStatus.OK);
+        return ResponseEntity.ok("Indexing scheduled");
     }
 }
