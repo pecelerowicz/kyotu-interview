@@ -25,6 +25,7 @@ public class InMemoryAverageTemperatureRepository {
     @Async
     public synchronized void indexInMemory() throws IOException {
         log.info("Indexing started");
+        map.clear();
         fileRepository.readDataRowsAsStream().forEach(r -> {
             if(!map.containsKey(r.getCity())) {
                 AverageSampleSizePair averageSize = new AverageSampleSizePair(r.getTemperature());
