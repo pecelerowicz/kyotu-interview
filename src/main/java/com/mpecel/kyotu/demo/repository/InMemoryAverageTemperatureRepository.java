@@ -27,33 +27,25 @@ public class InMemoryAverageTemperatureRepository {
         log.info("Indexing started");
         fileRepository.readDataRowsAsStream().forEach(r -> {
             if(!map.containsKey(r.getCity())) {
-                AverageSampleSizePair averageSize = createFreshAverageSampleSizePair(r);
+                AverageSampleSizePair averageSize = new AverageSampleSizePair(r.getTemperature());
                 Map<Integer, AverageSampleSizePair> yearAverage = new HashMap<>();
                 yearAverage.put(r.getDateTime().getYear(), averageSize);
                 map.put(r.getCity(), yearAverage);
             } else {
                 Map<Integer, AverageSampleSizePair> yearAverage = map.get(r.getCity());
                 if(!yearAverage.containsKey(r.getDateTime().getYear())) {
-                    AverageSampleSizePair averageSize = createFreshAverageSampleSizePair(r);
+                    AverageSampleSizePair averageSize = new AverageSampleSizePair(r.getTemperature());
                     yearAverage.put(r.getDateTime().getYear(), averageSize);
                 } else {
                     AverageSampleSizePair averageSize = yearAverage.get(r.getDateTime().getYear());
-                    averageSize.setAverage(updateAverage(averageSize.getAverage(),
-                            averageSize.getSize(), r.getTemperature()));
-                    averageSize.setSize(averageSize.getSize() + 1);
+                    averageSize.updateAverage(r.getTemperature());
                 }
             }
         });
         log.info("Indexing finished");
 
+        // todo remove
         System.out.println(map);
-    }
-
-    private static AverageSampleSizePair createFreshAverageSampleSizePair(DataRow r) {
-        return AverageSampleSizePair.builder()
-                .average(r.getTemperature())
-                .size(1)
-                .build();
     }
 
     public synchronized List<AverageTempByYear> averageTempByYearsForCity(String city) {
@@ -64,9 +56,9 @@ public class InMemoryAverageTemperatureRepository {
         return cityMap.entrySet()
                 .stream()
                 .map(e -> AverageTempByYear.builder()
-                                           .year(e.getKey()+"")
-                                           .averageTemperature(roundToOneDecimal(e.getValue().getAverage()))
-                                           .build())
+                        .year(e.getKey()+"")
+                        .averageTemperature(e.getValue().getRoundedAverage())
+                        .build())
                 .collect(Collectors.toList());
     }
 
@@ -74,19 +66,32 @@ public class InMemoryAverageTemperatureRepository {
         return (currentAverage * sampleSize + newValue)/(sampleSize + 1);
     }
 
+
+}
+class AverageSampleSizePair {
+    AverageSampleSizePair(double average) {
+        this.average = average;
+        this.size = 1;
+    }
+    private double average;
+    private int size;
+
+    public void updateAverage(double newValue) {
+        this.average = (average * size + newValue)/(size + 1);
+        this.size = size + 1;
+    }
+
+    public double getRoundedAverage() {
+        return roundToOneDecimal(average);
+    }
     private double roundToOneDecimal(double value) {
         return Math.round(value * 10.0) / 10.0;
     }
 
-
-}
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@ToString
-class AverageSampleSizePair {
-    private double average;
-    private int size;
+    @Override
+    public String toString() {
+        return "AverageSampleSizePair{" +
+                "rounded average=" + getRoundedAverage() +
+                '}';
+    }
 }
