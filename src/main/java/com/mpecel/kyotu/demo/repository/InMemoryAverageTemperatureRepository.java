@@ -62,12 +62,6 @@ public class InMemoryAverageTemperatureRepository {
                         .build())
                 .collect(Collectors.toList());
     }
-
-    private double updateAverage(double currentAverage, int sampleSize, double newValue) {
-        return (currentAverage * sampleSize + newValue)/(sampleSize + 1);
-    }
-
-
 }
 class AverageSampleSizePair {
     AverageSampleSizePair(double average) {
